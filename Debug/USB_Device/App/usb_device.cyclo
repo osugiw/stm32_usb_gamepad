@@ -1,4 +1,4 @@
 ../Drivers/STM32WBxx_HAL_Driver/Inc/stm32wbxx_ll_bus.h:939:22:LL_APB1_GRP1_EnableClock	1
-../USB_Device/App/usb_device.c:61:6:USBD_Clock_Config	2
-../USB_Device/App/usb_device.c:109:6:JoystickControl	5
-../USB_Device/App/usb_device.c:151:6:MX_USB_Device_Init	4
+../USB_Device/App/usb_device.c:62:6:USBD_Clock_Config	2
+../USB_Device/App/usb_device.c:110:6:JoystickControl	5
+../USB_Device/App/usb_device.c:153:6:MX_USB_Device_Init	4

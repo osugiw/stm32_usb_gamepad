@@ -31,17 +31,26 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-extern uint8_t joystick_X, joystick_Y, joystick_RX, joystick_RY;
+
+// Button state for controlling system state
+typedef struct{
+	bool leftJS_isPressed;
+	bool rightJS_isPressed;
+	bool a_isPressed;
+	bool b_isPressed;
+}buttonState_t;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+extern uint8_t joystick_X, joystick_Y, joystick_RX, joystick_RY;
+extern buttonState_t bt_states;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

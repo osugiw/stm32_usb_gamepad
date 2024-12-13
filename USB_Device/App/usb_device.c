@@ -34,8 +34,9 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 __IO uint32_t remotewakeupon = 0;
-uint8_t HID_Buffer[4];
+uint8_t HIDgamepadBuffer[4];
 extern PCD_HandleTypeDef hpcd_USB_FS;
+uint8_t gamepadBuff[5];
 /* USER CODE END PV */
 
 /* USER CODE BEGIN PFP */
@@ -132,13 +133,12 @@ void JoystickControl(void)
 		remotewakeupon = 1;
 	}
 	else if (((USBD_HandleTypeDef *) hpcd_USB_FS.pData)->dev_state == USBD_STATE_CONFIGURED){
-		uint8_t _buff[5];
-		_buff[0] =  joystick_X;
-		_buff[1] =  joystick_Y;
-		_buff[2] =  joystick_RX;
-		_buff[3] =  joystick_RY;
-		_buff[4] =  0;
-		USBD_HID_SendReport(&hUsbDeviceFS, _buff, 5);
+		gamepadBuff[0] =  joystick_X;
+		gamepadBuff[1] =  joystick_Y;
+		gamepadBuff[2] =  joystick_RX;
+		gamepadBuff[3] =  joystick_RY;
+		gamepadBuff[4] =  (bt_states.leftJS_isPressed << 3) | (bt_states.leftJS_isPressed << 2) | (bt_states.leftJS_isPressed << 1) | (bt_states.leftJS_isPressed);
+		USBD_HID_SendReport(&hUsbDeviceFS, gamepadBuff, 5);
 	}
 }
 

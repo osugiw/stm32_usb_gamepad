@@ -25,17 +25,22 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_hid.h"
-#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define ADC_SCAN_RATE	100
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+// Button PTD
+typedef struct{
+	uint8_t readState;
+	uint8_t currentState;
+	uint8_t lastState;
+	uint32_t lastDebounceTime;
+} button_t;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -50,9 +55,14 @@ DMA_HandleTypeDef hdma_adc1;
 TIM_HandleTypeDef htim1;
 
 /* USER CODE BEGIN PV */
-bool leftJS_state, rightJS_state;
+
+// Switches
+buttonState_t bt_states = {false, false, false, false};
+
+// Joystick knobs
 uint8_t joystick_X, joystick_Y, joystick_RX, joystick_RY;
 uint8_t rawADC[4];
+uint32_t prevTime = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,14 +73,11 @@ static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void controlButtonState(button_t *button, uint32_t debounceDelay, bool *returnState);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-
-
 
 /**
  * @brief ADC DMA callback when buffer is full
@@ -86,6 +93,30 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	joystick_RY = (int8_t)rawADC[3] - 128;
 }
 
+/**
+ * @brief Control the button state
+ * @param
+ * 		button				Struct of button's state
+ * 		debounceDelay		button delay read
+ * 		returnState			State to change when the button is pressed
+ * @retval None
+**/
+void controlButtonState(button_t *button, uint32_t debounceDelay, bool *returnState)
+{
+	// Ignoring noise or accidentally pressed
+	if(button->currentState != button->lastState)
+		button->lastDebounceTime = HAL_GetTick();
+
+	// Read the actual state from the button
+	if((HAL_GetTick() - button->lastDebounceTime) > debounceDelay){
+		if(button->readState != button->currentState){
+			button->currentState = button->readState;
+			if(button->currentState == GPIO_PIN_RESET){
+				*returnState = true;
+			}
+		}
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -97,7 +128,11 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  button_t bt_leftJS		= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t bt_rightJS		= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t bt_a 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t bt_b 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t arrButtons[4] 	= {bt_leftJS, bt_rightJS, bt_a, bt_b};
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -134,8 +169,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Detect user input and control the mouse
+	  arrButtons[0].readState	= HAL_GPIO_ReadPin(joystick_sw_GPIO_Port, joystick_sw_Pin);
+	  arrButtons[1].readState 	= HAL_GPIO_ReadPin(joystick_rsw_GPIO_Port, joystick_rsw_Pin);
+	  controlButtonState(&arrButtons[0], 20, &bt_states.leftJS_isPressed);
+	  controlButtonState(&arrButtons[1], 20, &bt_states.rightJS_isPressed);
+
+	  // Save the reading for the next iteration
+	  for(uint8_t i=0; i<4; i++)
+		  arrButtons[i].lastState	= arrButtons[i].readState;
+
 	  JoystickControl();
+
+	  // Normalize state
+	  if(HAL_GetTick() - prevTime >= 200){
+		  prevTime = HAL_GetTick();
+		  if(bt_states.leftJS_isPressed)
+			  bt_states.leftJS_isPressed = false;
+		  else if(bt_states.rightJS_isPressed)
+			  bt_states.rightJS_isPressed = false;
+	  }
+
 	  HAL_Delay(10);
     /* USER CODE END WHILE */
 
@@ -400,13 +453,13 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : joystick_sw_Pin */
   GPIO_InitStruct.Pin = joystick_sw_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(joystick_sw_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : joystick_rsw_Pin */
   GPIO_InitStruct.Pin = joystick_rsw_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(joystick_rsw_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
