@@ -57,8 +57,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define sw_l_Pin GPIO_PIN_13
-#define sw_l_GPIO_Port GPIOC
+#define joystick_sw_Pin GPIO_PIN_13
+#define joystick_sw_GPIO_Port GPIOC
 #define joystick_x_Pin GPIO_PIN_0
 #define joystick_x_GPIO_Port GPIOC
 #define joystick_y_Pin GPIO_PIN_1
@@ -67,8 +67,8 @@ void Error_Handler(void);
 #define joystick_ry_GPIO_Port GPIOA
 #define joystick_rx_Pin GPIO_PIN_1
 #define joystick_rx_GPIO_Port GPIOA
-#define sw_r_Pin GPIO_PIN_8
-#define sw_r_GPIO_Port GPIOA
+#define joystick_rsw_Pin GPIO_PIN_8
+#define joystick_rsw_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
