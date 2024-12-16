@@ -41,6 +41,15 @@ typedef struct{
 	uint8_t lastState;
 	uint32_t lastDebounceTime;
 } button_t;
+
+typedef struct{
+	bool leftJS_isPressed;
+	bool rightJS_isPressed;
+	bool a_isPressed;
+	bool b_isPressed;
+	bool x_isPressed;
+	bool y_isPressed;
+}buttonState_t;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,6 +67,7 @@ TIM_HandleTypeDef htim1;
 
 // Switches
 buttonState_t bt_states = {false, false, false, false};
+uint8_t bt_gamepad[2] = {0x00, 0x00};
 
 // Joystick knobs
 uint8_t joystick_X, joystick_Y, joystick_RX, joystick_RY;
@@ -87,10 +97,15 @@ void controlButtonState(button_t *button, uint32_t debounceDelay, bool *returnSt
 **/
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
-	joystick_X = (int8_t)rawADC[0] - 128;
-	joystick_Y = (int8_t)rawADC[1] - 128;
-	joystick_RX = (int8_t)rawADC[2] - 128;
-	joystick_RY = (int8_t)rawADC[3] - 128;
+	/*
+	 * To minimize the space in the hardware, the following configuration must be noted:
+	 * 	1. The axis of X & Y is switched
+	 * 	2. The X-axis is inverted polarity
+	 * */
+	joystick_X = ~(int8_t)rawADC[1] - 128;
+	joystick_Y = (int8_t)rawADC[0] - 128;
+	joystick_RX = ~(int8_t)rawADC[3] - 128;
+	joystick_RY = (int8_t)rawADC[2] - 128;
 }
 
 /**
@@ -132,7 +147,9 @@ int main(void)
   button_t bt_rightJS		= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
   button_t bt_a 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
   button_t bt_b 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
-  button_t arrButtons[4] 	= {bt_leftJS, bt_rightJS, bt_a, bt_b};
+  button_t bt_x 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t bt_y 			= {GPIO_PIN_SET, GPIO_PIN_SET, GPIO_PIN_SET, 0};
+  button_t arrButtons[6] 	= {bt_leftJS, bt_rightJS, bt_a, bt_b, bt_x, bt_y};
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -171,24 +188,44 @@ int main(void)
   {
 	  arrButtons[0].readState	= HAL_GPIO_ReadPin(joystick_sw_GPIO_Port, joystick_sw_Pin);
 	  arrButtons[1].readState 	= HAL_GPIO_ReadPin(joystick_rsw_GPIO_Port, joystick_rsw_Pin);
-	  controlButtonState(&arrButtons[0], 20, &bt_states.leftJS_isPressed);
-	  controlButtonState(&arrButtons[1], 20, &bt_states.rightJS_isPressed);
+	  arrButtons[2].readState	= HAL_GPIO_ReadPin(bt_a_GPIO_Port, bt_a_Pin);
+	  arrButtons[3].readState 	= HAL_GPIO_ReadPin(bt_b_GPIO_Port, bt_b_Pin);
+	  arrButtons[4].readState	= HAL_GPIO_ReadPin(bt_x_GPIO_Port, bt_x_Pin);
+	  arrButtons[5].readState 	= HAL_GPIO_ReadPin(bt_y_GPIO_Port, bt_y_Pin);
+	  controlButtonState(&arrButtons[0], 50, &bt_states.leftJS_isPressed);
+	  controlButtonState(&arrButtons[1], 50, &bt_states.rightJS_isPressed);
+	  controlButtonState(&arrButtons[2], 50, &bt_states.a_isPressed);
+	  controlButtonState(&arrButtons[3], 50, &bt_states.b_isPressed);
+	  controlButtonState(&arrButtons[4], 50, &bt_states.x_isPressed);
+	  controlButtonState(&arrButtons[5], 50, &bt_states.y_isPressed);
 
-	  // Save the reading for the next iteration
-	  for(uint8_t i=0; i<4; i++)
-		  arrButtons[i].lastState	= arrButtons[i].readState;
+	  bt_gamepad[0] = (bt_states.y_isPressed << 3) | (bt_states.x_isPressed << 0) | (bt_states.b_isPressed << 2) | (bt_states.a_isPressed << 1);
+	  bt_gamepad[1] = (bt_states.rightJS_isPressed << 2) | (bt_states.leftJS_isPressed << 1);
 
-	  JoystickControl();
-
-	  // Normalize state
+	  // Normalize state every 200 ms
 	  if(HAL_GetTick() - prevTime >= 200){
 		  prevTime = HAL_GetTick();
 		  if(bt_states.leftJS_isPressed)
 			  bt_states.leftJS_isPressed = false;
 		  else if(bt_states.rightJS_isPressed)
 			  bt_states.rightJS_isPressed = false;
+		  else if(bt_states.a_isPressed)
+			  bt_states.a_isPressed = false;
+		  else if(bt_states.b_isPressed)
+			  bt_states.b_isPressed = false;
+		  else if(bt_states.x_isPressed)
+			  bt_states.x_isPressed = false;
+		  else if(bt_states.y_isPressed)
+			  bt_states.y_isPressed = false;
 	  }
 
+
+	  // Save the reading for the next iteration
+	  for(uint8_t i=0; i<6; i++)
+		  arrButtons[i].lastState	= arrButtons[i].readState;
+
+	  // Send the Gamepad reading through the USB
+	  JoystickControl(bt_gamepad);
 	  HAL_Delay(10);
     /* USER CODE END WHILE */
 
@@ -450,17 +487,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  /*Configure GPIO pin : joystick_sw_Pin */
-  GPIO_InitStruct.Pin = joystick_sw_Pin;
+  /*Configure GPIO pins : bt_y_Pin joystick_rsw_Pin bt_a_Pin */
+  GPIO_InitStruct.Pin = bt_y_Pin|joystick_rsw_Pin|bt_a_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(joystick_sw_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : joystick_rsw_Pin */
-  GPIO_InitStruct.Pin = joystick_rsw_Pin;
+  /*Configure GPIO pins : bt_b_Pin bt_x_Pin joystick_sw_Pin */
+  GPIO_InitStruct.Pin = bt_b_Pin|bt_x_Pin|joystick_sw_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(joystick_rsw_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

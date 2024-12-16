@@ -107,7 +107,7 @@ void USBD_Clock_Config(void)
   * @param  None
   * @retval None
   */
-void JoystickControl(void)
+void JoystickControl(uint8_t *_bt_gamepad)
 {
 	if ((((USBD_HandleTypeDef *) hpcd_USB_FS.pData)->dev_remote_wakeup == 1) && (((USBD_HandleTypeDef *) hpcd_USB_FS.pData)->dev_state == USBD_STATE_SUSPENDED))
 	{
@@ -137,8 +137,10 @@ void JoystickControl(void)
 		gamepadBuff[1] =  joystick_Y;
 		gamepadBuff[2] =  joystick_RX;
 		gamepadBuff[3] =  joystick_RY;
-		gamepadBuff[4] =  (bt_states.leftJS_isPressed << 3) | (bt_states.leftJS_isPressed << 2) | (bt_states.leftJS_isPressed << 1) | (bt_states.leftJS_isPressed);
-		USBD_HID_SendReport(&hUsbDeviceFS, gamepadBuff, 5);
+		gamepadBuff[4] =  _bt_gamepad[0];
+		gamepadBuff[5] =  _bt_gamepad[1];
+
+		USBD_HID_SendReport(&hUsbDeviceFS, gamepadBuff, 6);
 	}
 }
 

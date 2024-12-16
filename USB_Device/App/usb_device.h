@@ -81,7 +81,7 @@ void MX_USB_Device_Init(void);
  * -- Insert functions declaration here --
  */
 /* USER CODE BEGIN FD */
-void JoystickControl(void);
+void JoystickControl(uint8_t *_bt_gamepad);
 /* USER CODE END FD */
 /**
   * @}

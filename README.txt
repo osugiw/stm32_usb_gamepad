@@ -6,7 +6,7 @@
  
 For now, the Gamepad has 4 buttons and 2 knobs, thus, these are the correct parameters:
 - On "usb_hid.h" line 50:
-		#define HID_MOUSE_REPORT_DESC_SIZE                 54U
+		#define HID_MOUSE_REPORT_DESC_SIZE                 66U
 
 - On "usb_hid.c":
 		/**
@@ -233,7 +233,7 @@ For now, the Gamepad has 4 buttons and 2 knobs, thus, these are the correct para
 			0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
 			0x09, 0x05,                    // USAGE (Game Pad)
 			0xa1, 0x01,                    // COLLECTION (Application)
-			0x09, 0x01,                    // 	USAGE (Pointer)
+			0x09, 0x01,                    //   USAGE (Pointer)
 			0xa1, 0x00,                    //   COLLECTION (Physical)
 			0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
 			0x09, 0x30,                    //     USAGE (X)
@@ -247,15 +247,21 @@ For now, the Gamepad has 4 buttons and 2 knobs, thus, these are the correct para
 			0x81, 0x02,                    //     INPUT (Data,Var,Abs)
 			0x05, 0x09,                    //     USAGE_PAGE (Button)
 			0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
-			0x29, 0x04,                    //     USAGE_MAXIMUM (Button 4)
+			0x29, 0x08,                    //     USAGE_MAXIMUM (Button 8)
 			0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
 			0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
 			0x75, 0x01,                    //     REPORT_SIZE (1)
-			0x95, 0x04,                    //     REPORT_COUNT (4)
+			0x95, 0x08,                    //     REPORT_COUNT (8)
 			0x81, 0x02,                    //     INPUT (Data,Var,Abs)
-			0x75, 0x04,                    //     REPORT_SIZE (4)
+			0x05, 0x09,                    //     USAGE_PAGE (Button)
+			0x19, 0x09,                    //     USAGE_MINIMUM (Button 9)
+			0x29, 0x0b,                    //     USAGE_MAXIMUM (Button 11)
+			0x75, 0x01,                    //     REPORT_SIZE (1)
+			0x95, 0x03,                    //     REPORT_COUNT (3)
+			0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+			0x75, 0x05,                    //     REPORT_SIZE (5)
 			0x95, 0x01,                    //     REPORT_COUNT (1)
-			0x81, 0x01,                    //     INPUT (Cnst,Ary,Abs) - Padding to complete 4-bit left from the buttons
+			0x81, 0x01,                    //     INPUT (Cnst,Ary,Abs)
 			0xc0,                          //   END_COLLECTION
 			0xc0                           // END_COLLECTION
 		};
